@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-func CheckOfflineHosts(z *zabbix.Client) ([]string, error) {
+func CheckHostsStatus(z *zabbix.Client) ([]string, error) {
 	hosts, err := z.GetHosts()
 	if err != nil {
 		return nil, err
@@ -17,7 +17,7 @@ func CheckOfflineHosts(z *zabbix.Client) ([]string, error) {
 
 	for i := range hosts {
 		wg.Add(1)
-		go GetItemValue(z, &hosts[i], &wg)
+		go getStatusItemValue(z, &hosts[i], &wg)
 	}
 
 	func() {
@@ -28,15 +28,15 @@ func CheckOfflineHosts(z *zabbix.Client) ([]string, error) {
 	var offlineHosts []string
 	for _, host := range hosts {
 		if host.Lastvalue == "1" && host.Prevvalue == "1" {
-			onlineHosts = append(onlineHosts, fmt.Sprintf("[ ON ] - %s", host.Host))
+			onlineHosts = append(onlineHosts, fmt.Sprintf("✅ %s", host.Host))
 		} else {
-			offlineHosts = append(offlineHosts, fmt.Sprintf("[ OFF ] - %s", host.Host))
+			offlineHosts = append(offlineHosts, fmt.Sprintf("❌ %s", host.Host))
 		}
 	}
 	return append(onlineHosts, offlineHosts...), nil
 }
 
-func GetItemValue(z *zabbix.Client, host *zabbix.Host, wg *sync.WaitGroup) {
+func getStatusItemValue(z *zabbix.Client, host *zabbix.Host, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	params := map[string]interface{}{
