@@ -25,6 +25,7 @@ var commands = map[string]CommandHandler{
 	"printers_counter": handlePrinterCounter,
 	"restart_win":      handleRestartWindowsHost,
 	"shutdown_win":     handleShutdownWindowsHost,
+	"listip":           handleListIp,
 }
 
 func StartBot() {
@@ -41,7 +42,12 @@ func StartBot() {
 	}
 
 	token := env["TELEGRAM_API_TOKEN"]
-	allowedChatID, err := strconv.Atoi(env["TELEGRAM_ALLOWED_CHAT_ID"])
+	chatsIds := env["TELEGRAM_ALLOWED_CHAT_ID"]
+
+	allowedChatID := strings.Split(chatsIds, ",")
+
+	allowed := loadAllowedChats(allowedChatID)
+
 	if err != nil {
 		log.Fatal("Não foi possível carregar os IDs dos chats permitidos.", err)
 	}
@@ -59,8 +65,13 @@ func StartBot() {
 	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		// Ignora qualquer update sem mensagem ou mensagens sem ser o meu ChatID
-		if update.Message == nil || update.Message.Chat.ID != int64(allowedChatID) {
+		logar(update)
+		// Ignora qualquer update sem mensagem ou mensagens sem ChatID autorizados
+		if update.Message == nil {
+			continue
+		}
+
+		if !allowed[update.Message.Chat.ID] {
 			continue
 		}
 
@@ -75,6 +86,49 @@ func StartBot() {
 			handler(bot, update)
 		}
 	}
+}
+
+func logar(update tgbotapi.Update) {
+	name := update.Message.From.FirstName
+	if update.Message.From.LastName != "" {
+		name += " " + update.Message.From.LastName
+	}
+
+	username := update.Message.Chat.UserName
+	if username == "" {
+		username = "[N/A]"
+	}
+
+	comando := update.Message.Text
+
+	log.Printf(
+		"\n• Chat ID:%d\n• Nome:%s\n• Username:%s\n• Comando:%s\n",
+		update.Message.Chat.ID,
+		name,
+		username,
+		comando,
+	)
+}
+
+func loadAllowedChats(parts []string) map[int64]bool {
+	allowed := make(map[int64]bool)
+
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+
+		id, err := strconv.ParseInt(p, 10, 64)
+		if err != nil {
+			log.Printf("⚠️  Ignorando ID inválido no ALLOWED_CHATS: %s\n", p)
+			continue
+		}
+
+		allowed[id] = true
+	}
+
+	return allowed
 }
 
 func handlePing(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
@@ -250,4 +304,25 @@ func handleShutdownWindowsHost(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	m := fmt.Sprintf("✅ Comando executado para: %s", host)
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, m)
 	bot.Send(msg)
+}
+
+func handleListIp(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	z := zabbix.NewClient()
+	hostsList, err := z.ListIps()
+	if err != nil {
+		msg := fmt.Sprintf("Erro ao listar Zabbix:\n%v", err)
+		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg))
+		return
+	}
+
+	msg := "====== Lista de IPs ======\n\n"
+
+	for _, host := range hostsList {
+		msg += fmt.Sprintf("🌐\t%s\n", host.Host)
+		for i := range host.Interfaces {
+			msg += fmt.Sprintf("•\t%s\n", host.Interfaces[i].IP)
+		}
+		msg += "\n"
+	}
+	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg))
 }
