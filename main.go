@@ -1,7 +1,11 @@
 package main
 
-import bot "TelegramNotify/telegram"
+import (
+	"TelegramNotify/config"
+	bot "TelegramNotify/telegram"
+)
 
 func main() {
-	bot.StartBot()
+	env := config.LoadConfig()
+	bot.StartBot(env)
 }

@@ -1,13 +1,11 @@
 package zabbix
 
 import (
+	"TelegramNotify/config"
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
-
-	"github.com/joho/godotenv"
 )
 
 type Client struct {
@@ -34,17 +32,7 @@ type rpcError struct {
 }
 
 func NewClient() *Client {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	var env map[string]string
-	env, e := godotenv.Read()
-
-	if e != nil {
-		log.Fatal(e)
-	}
+	env := config.LoadConfig()
 
 	url := env["ZABBIX_API_URL"]
 	token := env["ZABBIX_API_TOKEN"]

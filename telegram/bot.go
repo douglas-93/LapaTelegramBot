@@ -15,7 +15,6 @@ import (
 
 	"github.com/go-ping/ping"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/joho/godotenv"
 )
 
 type CommandHandler func(bot *tgbotapi.BotAPI, update tgbotapi.Update)
@@ -30,18 +29,7 @@ var commands = map[string]CommandHandler{
 	"protheus_status":  handleProtheusStatus,
 }
 
-func StartBot() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	var env map[string]string
-	env, e := godotenv.Read()
-
-	if e != nil {
-		log.Fatal(e)
-	}
+func StartBot(env map[string]string) {
 
 	token := env["TELEGRAM_API_TOKEN"]
 	chatsIds := env["TELEGRAM_ALLOWED_CHAT_ID"]
@@ -49,10 +37,6 @@ func StartBot() {
 	allowedChatID := strings.Split(chatsIds, ",")
 
 	allowed := loadAllowedChats(allowedChatID)
-
-	if err != nil {
-		log.Fatal("Não foi possível carregar os IDs dos chats permitidos.", err)
-	}
 
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
@@ -104,7 +88,7 @@ func logar(update tgbotapi.Update) {
 	comando := update.Message.Text
 
 	log.Printf(
-		"\n• Chat ID:%d\n• Nome:%s\n• Username:%s\n• Comando:%s\n",
+		"\n• Chat ID:%d\n• Nome:%s\n• Username:%s\n• Comando:%s\n\n",
 		update.Message.Chat.ID,
 		name,
 		username,
