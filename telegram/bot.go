@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"TelegramNotify/file_handler"
 	"TelegramNotify/monitor"
 	"TelegramNotify/schedule"
 	"TelegramNotify/zabbix"
@@ -253,6 +254,9 @@ func handlePrinterCounter(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	}
 
 	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg))
+	excelFile := file_handler.GenerateSheet()
+	bot.Send(tgbotapi.NewDocument(update.Message.Chat.ID, tgbotapi.FilePath(excelFile)))
+	os.Remove(excelFile)
 }
 
 func handleRestartWindowsHost(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
