@@ -1,11 +1,11 @@
 package zabbix
 
 import (
-	"TelegramNotify/config"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 )
 
 type Client struct {
@@ -32,10 +32,8 @@ type rpcError struct {
 }
 
 func NewClient() *Client {
-	env := config.LoadConfig()
-
-	url := env["ZABBIX_API_URL"]
-	token := env["ZABBIX_API_TOKEN"]
+	url := os.Getenv("ZABBIX_API_URL")
+	token := os.Getenv("ZABBIX_API_TOKEN")
 
 	return &Client{
 		URL:   url,

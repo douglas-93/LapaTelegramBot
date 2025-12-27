@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	"TelegramNotify/zabbix"
+	"LapaTelegramBot/zabbix"
 	"encoding/json"
 	"fmt"
 	"sync"

@@ -1,4 +1,4 @@
-module TelegramNotify
+module LapaTelegramBot
 
 go 1.25
 

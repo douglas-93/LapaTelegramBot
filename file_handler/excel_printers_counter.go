@@ -1,8 +1,8 @@
 package file_handler
 
 import (
-	"TelegramNotify/monitor"
-	"TelegramNotify/zabbix"
+	"LapaTelegramBot/monitor"
+	"LapaTelegramBot/zabbix"
 	"fmt"
 
 	"github.com/xuri/excelize/v2"
