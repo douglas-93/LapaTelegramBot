@@ -68,6 +68,7 @@ func (b *Bot) initCommands() {
 		"listip":            b.handleListIp,
 		"ping":              b.handlePing,
 		"services":          b.handleRemoteServices,
+		"list_services":     b.handleListServices,
 		"printers_counter":  b.handlePrinterCounter,
 		"schedule_add":      b.handleScheduleAdd,
 		"schedule_remove":   b.handleScheduleRemove,

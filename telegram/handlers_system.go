@@ -420,3 +420,88 @@ func collectResults(results chan ServiceResult) []ServiceResult {
 	}
 	return collected
 }
+
+func (b *Bot) handleListServices(update tgbotapi.Update) {
+	parts := strings.Split(update.Message.Text, " ")
+	if len(parts) < 2 {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Uso: /list_services <IP/Host> [filtro]\nExemplo: /list_services 192.168.100.16\nExemplo: /list_services 192.168.100.16 TOTVS")
+		b.API.Send(msg)
+		return
+	}
+
+	host := parts[1]
+	filter := ""
+	if len(parts) >= 3 {
+		filter = strings.ToLower(parts[2])
+	}
+
+	// Envia mensagem inicial
+	processingMsg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("⏳ Conectando em %s...", host))
+	tempMsg, _ := b.API.Send(processingMsg)
+
+	// Conecta ao gerenciador de serviços remoto
+	m, err := mgr.ConnectRemote(host)
+	if err != nil {
+		text := fmt.Sprintf("❌ Erro ao conectar no host %s: %v", host, err)
+		edit := tgbotapi.NewEditMessageText(update.Message.Chat.ID, tempMsg.MessageID, text)
+		b.API.Send(edit)
+		return
+	}
+	defer m.Disconnect()
+
+	// Atualiza mensagem
+	updateMsg := tgbotapi.NewEditMessageText(update.Message.Chat.ID, tempMsg.MessageID, "📋 Listando serviços...")
+	b.API.Send(updateMsg)
+
+	// Lista todos os serviços
+	services, err := m.ListServices()
+	if err != nil {
+		text := fmt.Sprintf("❌ Erro ao listar serviços: %v", err)
+		edit := tgbotapi.NewEditMessageText(update.Message.Chat.ID, tempMsg.MessageID, text)
+		b.API.Send(edit)
+		return
+	}
+
+	// Filtra serviços se necessário
+	var filteredServices []string
+	for _, serviceName := range services {
+		if filter == "" || strings.Contains(strings.ToLower(serviceName), filter) {
+			filteredServices = append(filteredServices, serviceName)
+		}
+	}
+
+	// Monta mensagem de resposta
+	var sb strings.Builder
+	if filter != "" {
+		sb.WriteString(fmt.Sprintf("🔍 *Serviços em %s* (filtro: %s)\n\n", host, filter))
+	} else {
+		sb.WriteString(fmt.Sprintf("📋 *Serviços em %s*\n\n", host))
+	}
+
+	if len(filteredServices) == 0 {
+		sb.WriteString("Nenhum serviço encontrado.")
+	} else {
+		sb.WriteString(fmt.Sprintf("Total: *%d serviços*\n\n", len(filteredServices)))
+
+		// Limita a exibição para evitar mensagens muito grandes
+		maxDisplay := 50
+		displayCount := len(filteredServices)
+		if displayCount > maxDisplay {
+			displayCount = maxDisplay
+		}
+
+		for i := 0; i < displayCount; i++ {
+			sb.WriteString(fmt.Sprintf("• `%s`\n", filteredServices[i]))
+		}
+
+		if len(filteredServices) > maxDisplay {
+			sb.WriteString(fmt.Sprintf("\n_... e mais %d serviços_", len(filteredServices)-maxDisplay))
+			sb.WriteString("\n\n💡 *Dica:* Use um filtro para refinar a busca")
+		}
+	}
+
+	// Envia resultado
+	edit := tgbotapi.NewEditMessageText(update.Message.Chat.ID, tempMsg.MessageID, sb.String())
+	edit.ParseMode = "Markdown"
+	b.API.Send(edit)
+}
