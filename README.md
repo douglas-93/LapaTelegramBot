@@ -180,6 +180,16 @@ Envia relatório de contadores de impressoras por email.
   - `/send_mail_counter joao@empresa.com`
   - `/send_mail_counter joao@empresa.com maria@empresa.com ti@empresa.com`
 
+### 📁 Upload de Arquivos
+
+#### Envio Direto
+
+O bot agora aceita o envio de arquivos diretamente no chat.
+
+- **Tipos suportados**: Documentos, Fotos, Áudios, Vídeos e Mensagens de Voz.
+- **Local de salvamento**: Todos os arquivos são salvos na pasta `uploaded_files/` no diretório raiz do bot.
+- **Feedback**: O bot informa quando o download inicia e quando é concluído com sucesso.
+
 ### ⏰ Sistema de Agendamento
 
 #### `/schedule_add <min> <hora> <dia> <mês> <dia_semana> <comando>`

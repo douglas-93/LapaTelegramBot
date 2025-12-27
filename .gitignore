@@ -2,4 +2,5 @@
 *.exe
 .idea
 release
+uploaded_files
 schedules.json

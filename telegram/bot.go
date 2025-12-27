@@ -105,6 +105,16 @@ func (b *Bot) Start() {
 		}
 
 		if !update.Message.IsCommand() { // Ignora mensagens que não são comandos
+			// Verifica se é um arquivo (Documento, Foto, Audio, Video, etc)
+			if update.Message.Document != nil ||
+				update.Message.Photo != nil ||
+				update.Message.Audio != nil ||
+				update.Message.Video != nil ||
+				update.Message.Voice != nil {
+				b.handleFileUpload(update)
+				continue
+			}
+
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Informe um comando.")
 			b.API.Send(msg)
 			continue
@@ -212,6 +222,8 @@ func (b *Bot) handleStart(update tgbotapi.Update) {
 			"• `/shutdown_win` - Desligar host\n\n"+
 			"📧 *Relatórios*\n"+
 			"• `/send_mail_counter` - Enviar contadores por email\n\n"+
+			"📁 *Upload de Arquivos*\n"+
+			"• Envie qualquer arquivo para salvá-lo no servidor!\n\n"+
 			"⏰ *Agendamentos*\n"+
 			"• `/schedule_add` - Criar agendamento\n"+
 			"• `/schedule_list` - Listar agendamentos\n"+
