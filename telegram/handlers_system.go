@@ -202,10 +202,11 @@ const (
 
 // ServiceResult representa o resultado de uma operação em um serviço
 type ServiceResult struct {
-	ServiceName string
-	Operation   ServiceOperation
-	Success     bool
-	Error       error
+	ServiceName           string
+	Operation             ServiceOperation
+	Success               bool
+	Error                 error
+	AlreadyInDesiredState bool // Indica se o serviço já estava no estado desejado
 }
 
 // executeOperation executa a operação especificada nos serviços
@@ -239,6 +240,8 @@ func sendResults(b *Bot, chatID int64, results []ServiceResult) {
 		icon := "✅"
 		if !result.Success {
 			icon = "❌"
+		} else if result.AlreadyInDesiredState {
+			icon = "ℹ️" // Ícone de informação para quando já está no estado desejado
 		}
 
 		opText := ""
@@ -251,7 +254,16 @@ func sendResults(b *Bot, chatID int64, results []ServiceResult) {
 
 		sb.WriteString(fmt.Sprintf("%s *%s* (%s): ", icon, result.ServiceName, opText))
 		if result.Success {
-			sb.WriteString("Sucesso")
+			if result.AlreadyInDesiredState {
+				// Mensagem específica quando já está no estado desejado
+				if result.Operation == OperationStart {
+					sb.WriteString("Já está rodando")
+				} else if result.Operation == OperationStop {
+					sb.WriteString("Já está parado")
+				}
+			} else {
+				sb.WriteString("Sucesso")
+			}
 		} else {
 			sb.WriteString(fmt.Sprintf("Erro: %v", result.Error))
 		}
@@ -320,12 +332,31 @@ func stopService(m *mgr.Mgr, serviceName string) ServiceResult {
 	}
 	defer s.Close()
 
+	// Verifica status atual do serviço
+	currentStatus, err := s.Query()
+	if err != nil {
+		return ServiceResult{
+			ServiceName: serviceName,
+			Operation:   OperationStop,
+			Success:     false,
+			Error:       fmt.Errorf("consultar status: %w", err),
+		}
+	}
+
+	// Se já estiver parado, retorna sucesso com mensagem apropriada
+	if currentStatus.State == svc.Stopped {
+		return ServiceResult{
+			ServiceName:           serviceName,
+			Operation:             OperationStop,
+			Success:               true,
+			Error:                 nil,
+			AlreadyInDesiredState: true,
+		}
+	}
+
+	// Tenta parar o serviço
 	status, err := s.Control(svc.Stop)
 	if err != nil {
-		// Se já estiver parado, control pode falhar ou retornar erro específico.
-		// Vamos checar status atual antes?
-		// O snippet original não checava, mas é boa prática.
-		// Seguirei o snippet original para fidelidade, mas ajustando msg de erro.
 		return ServiceResult{
 			ServiceName: serviceName,
 			Operation:   OperationStop,
@@ -372,6 +403,29 @@ func startService(m *mgr.Mgr, serviceName string) ServiceResult {
 	}
 	defer s.Close()
 
+	// Verifica status atual do serviço
+	currentStatus, err := s.Query()
+	if err != nil {
+		return ServiceResult{
+			ServiceName: serviceName,
+			Operation:   OperationStart,
+			Success:     false,
+			Error:       fmt.Errorf("consultar status: %w", err),
+		}
+	}
+
+	// Se já estiver rodando, retorna sucesso com mensagem apropriada
+	if currentStatus.State == svc.Running {
+		return ServiceResult{
+			ServiceName:           serviceName,
+			Operation:             OperationStart,
+			Success:               true,
+			Error:                 nil,
+			AlreadyInDesiredState: true,
+		}
+	}
+
+	// Tenta iniciar o serviço
 	err = s.Start()
 	if err != nil {
 		return ServiceResult{
