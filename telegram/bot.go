@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"LapaTelegramBot/mailer"
 	"LapaTelegramBot/schedule"
 	"LapaTelegramBot/zabbix"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 type Bot struct {
 	API             *tgbotapi.BotAPI
 	Zabbix          *zabbix.Client
+	Mailer          *mailer.Client
 	ScheduleStore   *schedule.Storage
 	ScheduleManager *schedule.Manager
 	Commands        map[string]func(tgbotapi.Update)
@@ -36,6 +38,7 @@ func StartBot() {
 	bot := &Bot{
 		API:          api,
 		Zabbix:       zabbix.NewClient(),
+		Mailer:       mailer.NewClient(),
 		AllowedChats: allowed,
 	}
 
@@ -60,18 +63,19 @@ func (b *Bot) initSchedule() {
 
 func (b *Bot) initCommands() {
 	b.Commands = map[string]func(tgbotapi.Update){
-		"status_check":     b.handleStatusCheck,
-		"protheus_status":  b.handleProtheusStatus,
-		"listip":           b.handleListIp,
-		"ping":             b.handlePing,
-		"services":         b.handleRemoteServices,
-		"printers_counter": b.handlePrinterCounter,
-		"schedule_add":     b.handleScheduleAdd,
-		"schedule_remove":  b.handleScheduleRemove,
-		"schedule_list":    b.handleScheduleList,
-		"schedule_help":    b.handleScheduleHelp,
-		"restart_win":      b.handleRestartWindowsHost,
-		"shutdown_win":     b.handleShutdownWindowsHost,
+		"status_check":      b.handleStatusCheck,
+		"protheus_status":   b.handleProtheusStatus,
+		"listip":            b.handleListIp,
+		"ping":              b.handlePing,
+		"services":          b.handleRemoteServices,
+		"printers_counter":  b.handlePrinterCounter,
+		"schedule_add":      b.handleScheduleAdd,
+		"schedule_remove":   b.handleScheduleRemove,
+		"schedule_list":     b.handleScheduleList,
+		"schedule_help":     b.handleScheduleHelp,
+		"restart_win":       b.handleRestartWindowsHost,
+		"shutdown_win":      b.handleShutdownWindowsHost,
+		"send_mail_counter": b.handleSendMailCounter,
 	}
 }
 
