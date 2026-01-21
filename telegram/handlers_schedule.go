@@ -29,6 +29,10 @@ func (b *Bot) handleScheduleAdd(update tgbotapi.Update) {
 	// cron tem 5 campos
 	cronExpr := strings.Join(parts[1:6], " ")
 	command := parts[6]
+	var args = ""
+	if len(parts) == 8 {
+		args = parts[7]
+	}
 	chatID := update.Message.Chat.ID
 
 	if err := schedule.ValidateCron(cronExpr); err != nil {
@@ -42,6 +46,7 @@ func (b *Bot) handleScheduleAdd(update tgbotapi.Update) {
 		ID:      id,
 		Cron:    cronExpr,
 		Command: command,
+		Args:    args,
 		ChatID:  chatID,
 		Name:    "Agendamento criado pelo usuário",
 	}
@@ -53,7 +58,7 @@ func (b *Bot) handleScheduleAdd(update tgbotapi.Update) {
 	}
 	err = b.ScheduleManager.Add(j, func() {
 		log.Printf("Executando job agendado: %s (ID: %d)", command, id)
-		b.ExecuteCommand(command, chatID)
+		b.ExecuteCommand(command+" "+args, chatID)
 	})
 	if err != nil {
 		b.API.Send(tgbotapi.NewMessage(chatID, "Erro: "+err.Error()))
@@ -89,8 +94,8 @@ func (b *Bot) handleScheduleList(update tgbotapi.Update) {
 	msg := "📅📅📅 Agendamentos atuais: 📅📅📅\n\n"
 
 	for _, j := range jobs {
-		msg += fmt.Sprintf("• *ID:* %d\nCron: `%s`\nCmd: `%s`\n\n",
-			j.ID, j.Cron, j.Command)
+		msg += fmt.Sprintf("• *ID:* %d\nCron: `%s`\nCmd: `%s`\nArgs: `%s`\n\n",
+			j.ID, j.Cron, j.Command, j.Args)
 	}
 
 	b.API.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg))
