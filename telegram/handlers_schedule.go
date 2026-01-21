@@ -27,6 +27,7 @@ func (b *Bot) handleScheduleAdd(update tgbotapi.Update) {
 	}
 
 	// cron tem 5 campos
+	fixTimeZone(parts)
 	cronExpr := strings.Join(parts[1:6], " ")
 	command := parts[6]
 	var args = ""
@@ -103,4 +104,14 @@ func (b *Bot) handleScheduleList(update tgbotapi.Update) {
 
 func (b *Bot) handleScheduleHelp(update tgbotapi.Update) {
 	b.API.Send(tgbotapi.NewMessage(update.Message.Chat.ID, schedule.CronHelp()))
+}
+
+func fixTimeZone(parts []string) {
+	if parts[2] != "*" {
+		timeAsInt, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return
+		}
+		parts[2] = strconv.Itoa(timeAsInt + 3)
+	}
 }
