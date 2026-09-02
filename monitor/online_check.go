@@ -12,6 +12,9 @@ func CheckHostsStatus(z *zabbix.Client) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(hosts) == 0 {
+		return nil, fmt.Errorf("Zabbix não retornou hosts visíveis para o usuário do token; verifique as permissões do usuário e se a URL aponta para a instância correta")
+	}
 
 	var wg sync.WaitGroup
 
@@ -43,6 +46,9 @@ func CheckHostsStatusExcludingGroups(z *zabbix.Client, excludeNames []string) ([
 	if err != nil {
 		return nil, err
 	}
+	if len(hosts) == 0 {
+		return nil, fmt.Errorf("Zabbix não retornou hosts ativos; verifique as permissões do usuário do token e os grupos excluídos")
+	}
 
 	var wg sync.WaitGroup
 
@@ -73,7 +79,7 @@ func getStatusItemValue(z *zabbix.Client, host *zabbix.Host, wg *sync.WaitGroup)
 	params := map[string]interface{}{
 		"output":  "extend",
 		"hostids": host.Hostid,
-		"search": map[string]string{
+		"filter": map[string]string{
 			"key_": "icmpping",
 		},
 	}
@@ -90,7 +96,10 @@ func getStatusItemValue(z *zabbix.Client, host *zabbix.Host, wg *sync.WaitGroup)
 		Prevvalue string `json:"prevvalue"`
 	}
 
-	json.Unmarshal(resp, &items)
+	if err := json.Unmarshal(resp, &items); err != nil {
+		host.Error = true
+		return
+	}
 
 	if len(items) > 0 {
 		host.Lastvalue = items[0].Lastvalue

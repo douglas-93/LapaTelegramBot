@@ -3,9 +3,10 @@ package zabbix
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type Client struct {
@@ -29,6 +30,7 @@ type response struct {
 type rpcError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+	Data    string `json:"data"`
 }
 
 func NewClient() *Client {
@@ -42,26 +44,53 @@ func NewClient() *Client {
 }
 
 func (c *Client) Call(method string, params interface{}) (json.RawMessage, error) {
+	if strings.TrimSpace(c.URL) == "" {
+		return nil, fmt.Errorf("ZABBIX_API_URL não foi definida")
+	}
+	if strings.TrimSpace(c.Token) == "" {
+		return nil, fmt.Errorf("ZABBIX_API_TOKEN não foi definido")
+	}
+
 	req := request{
 		Jsonrpc: "2.0",
 		Method:  method,
 		Params:  params,
 		ID:      1,
-		Auth:    c.Token,
 	}
 
-	body, _ := json.Marshal(req)
-	resp, err := http.Post(c.URL, "application/json", bytes.NewBuffer(body))
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
 
+	httpReq, err := http.NewRequest("POST", c.URL, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json-rpc")
+	httpReq.Header.Set("Authorization", "Bearer "+strings.TrimSpace(c.Token))
+
+	resp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return nil, fmt.Errorf("Zabbix HTTP %s", resp.Status)
+	}
+
 	var r response
-	json.NewDecoder(resp.Body).Decode(&r)
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return nil, err
+	}
 
 	if r.Error != nil {
-		return nil, errors.New(r.Error.Message)
+		if r.Error.Data != "" {
+			return nil, fmt.Errorf("Zabbix API (%d): %s: %s", r.Error.Code, r.Error.Message, r.Error.Data)
+		}
+		return nil, fmt.Errorf("Zabbix API (%d): %s", r.Error.Code, r.Error.Message)
 	}
 
 	return r.Result, nil

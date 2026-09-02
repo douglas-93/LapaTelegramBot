@@ -25,7 +25,9 @@ func (c *Client) GetHosts() ([]Host, error) {
 	}
 
 	var hosts []Host
-	json.Unmarshal(resp, &hosts)
+	if err := json.Unmarshal(resp, &hosts); err != nil {
+		return nil, err
+	}
 	return hosts, nil
 }
 
@@ -53,7 +55,9 @@ func (c *Client) GetHostsExcludingGroups(excludeNames []string) ([]Host, error) 
 		} `json:"groups"`
 	}
 
-	json.Unmarshal(resp, &rawHosts)
+	if err := json.Unmarshal(resp, &rawHosts); err != nil {
+		return nil, err
+	}
 
 	// Cria mapa de exclusão para checagem rápida
 	excludeMap := make(map[string]bool)
