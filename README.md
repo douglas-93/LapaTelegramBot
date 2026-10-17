@@ -20,6 +20,7 @@ ZABBIX_API_URL=<YOUR_ZABBIX_SERVER_ADDRESS>/zabbix/api_jsonrpc.php
 SMTP_SERVER=smtp.gmail.com:587
 SMTP_USER=seu-email@gmail.com
 SMTP_PASSWORD=sua-senha-de-app
+AD_DEFAULT_PASSWORD=
 ```
 
 ### Configuração do Telegram
@@ -60,6 +61,12 @@ Para usar o comando `/send_mail_counter`, configure as variáveis SMTP:
 - **Outlook/Hotmail**: `smtp-mail.outlook.com:587`
 - **Yahoo**: `smtp.mail.yahoo.com:587`
 - **Office 365**: `smtp.office365.com:587`
+
+### Redefinição de senha no Active Directory
+
+Configure `AD_DEFAULT_PASSWORD` com a senha padrão que será aplicada pelo comando `/resetpwd <usuario>`. O bot deve rodar em um computador Windows com o módulo PowerShell ActiveDirectory disponível e sob uma conta com permissão para redefinir senhas e desbloquear usuários no domínio.
+
+O comando redefine a senha, exige que o usuário a troque no próximo logon e desbloqueia a conta somente se ela estiver bloqueada. Se a conta estiver configurada com senha que nunca expira, essa opção será desativada para que a troca obrigatória possa ser aplicada. Se o módulo não estiver disponível, a conta não for encontrada ou a conta de execução não tiver permissão, o bot informa o erro. Proteja o arquivo `.env`, pois ele contém a senha padrão.
 
 ### ⚙️ Ajustes Necessários
 
@@ -136,6 +143,13 @@ Desliga remotamente um host Windows.
 
 - Requer permissões administrativas
 - Exemplo: `/shutdown_win LVMAQUINA`
+
+#### `/resetpwd <usuario>`
+
+Redefine a senha do usuário do Active Directory para o valor configurado em `AD_DEFAULT_PASSWORD`, exige a troca no próximo logon e desbloqueia a conta caso esteja bloqueada. Se a conta estiver com senha que nunca expira, essa configuração será desativada.
+
+- Requer o módulo PowerShell ActiveDirectory e permissões adequadas para a conta que executa o bot
+- Exemplo: `/resetpwd usuario`
 
 ### ⚙️ Gerenciamento de Serviços Remotos
 

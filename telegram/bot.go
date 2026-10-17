@@ -80,6 +80,7 @@ func (b *Bot) initCommands() {
 		"restart_win":       b.handleRestartWindowsHost,
 		"shutdown_win":      b.handleShutdownWindowsHost,
 		"send_mail_counter": b.handleSendMailCounter,
+		"resetpwd":          b.handleResetPassword,
 	}
 }
 
@@ -287,6 +288,8 @@ func (b *Bot) handleStart(update tgbotapi.Update) {
 			"💻 *Gerenciamento Windows*\n"+
 			"• `/restart_win` - Reiniciar host\n"+
 			"• `/shutdown_win` - Desligar host\n\n"+
+			"🔐 *Active Directory*\n"+
+			"• `/resetpwd <usuario>` - Redefinir senha, exigir troca no próximo logon e desbloquear conta\n\n"+
 			"📧 *Relatórios*\n"+
 			"• `/send_mail_counter` - Enviar contadores por email\n\n"+
 			"📁 *Upload de Arquivos*\n"+

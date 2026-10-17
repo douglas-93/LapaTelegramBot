@@ -8,6 +8,7 @@ services - Gerencia serviços remotos (start/stop/restart)
 list_services - Lista serviços de um host remoto com filtro opcional
 restart_win - Reinicia remotamente um host Windows
 shutdown_win - Desliga remotamente um host Windows
+resetpwd - Redefine senha, exige troca no próximo logon e desbloqueia usuário do Active Directory
 send_mail_counter - Envia relatório de contadores por email
 schedule_add - Cria agendamento usando expressões CRON
 schedule_list - Lista todos os agendamentos ativos

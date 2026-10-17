@@ -41,6 +41,9 @@ Sou o LapaTelegramBot, seu assistente de gerenciamento e monitoramento.
 • /restart_win - Reiniciar host
 • /shutdown_win - Desligar host
 
+🔐 Active Directory
+• /resetpwd <usuario> - Redefinir senha, exigir troca no próximo logon e desbloquear conta
+
 📧 Relatórios
 • /send_mail_counter - Enviar contadores por email
 
